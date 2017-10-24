@@ -47,5 +47,7 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.kmlkant3497.bru_chat.MainActivity" /></activity>
     </application>
-
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
 </manifest>

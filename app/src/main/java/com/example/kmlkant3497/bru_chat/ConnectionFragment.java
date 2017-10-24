@@ -11,6 +11,8 @@ import android.view.ViewGroup;
 
 public class ConnectionFragment extends Fragment {
 
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
