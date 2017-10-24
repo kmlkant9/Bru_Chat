@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Bru_Chat</string>
+    <string name="login">Login</string>
+    <string name="client">Connected peers</string>
+    <string name="host">Host</string>
+    <string name="chat">Chat</string>
+
+    <string-array name="dummy_data">
+        <item>One</item>
+        <item>Two</item>
+        <item>Three</item>
+        <item>Four</item>
+        <item>Five</item>
+        <item>Six</item>
+        <item>Seven</item>
+        <item>Eight</item>
+        <item>Nine</item>
+        <item>Ten</item>
+    </string-array>
+    <string name="title_activity_host">HostActivity</string>
+    <string name="action_settings">Settings</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
