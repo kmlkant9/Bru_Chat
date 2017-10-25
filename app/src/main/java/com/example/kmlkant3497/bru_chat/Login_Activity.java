@@ -16,8 +16,8 @@ import static com.example.kmlkant3497.bru_chat.R.id.useLogo;
 
 public class Login_Activity extends AppCompatActivity {
 
-    // helps in Debuggin (via LOG messages)
-    private static final String TAG = "Login_Activity";
+    // helps in Debugging (via LOG messages)
+    private static final String TAG = "Login_Activity.java";
 
     public Button button_join;
     public EditText editText_ip;
