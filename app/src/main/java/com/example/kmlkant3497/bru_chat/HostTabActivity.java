@@ -10,11 +10,13 @@ import android.widget.TextView;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 import android.text.format.Formatter;
 
@@ -28,18 +30,17 @@ import android.widget.Button;
 
 public class HostTabActivity extends AppCompatActivity {
 
+    // helps in Debugging (via LOG messages)
+    private static final String TAG = "HostTabActivity.java";
+
     private TextView serverStatus;
 
     // DEFAULT IP
-    public static String SERVERIP = "10.0.2.15";
+    public static String SERVERIP; // By default
 
     // DESIGNATE A PORT
     public static final int SERVERPORT = 8080;
 
-    WifiManager wmanager;
-    private Handler handler = new Handler();
-
-    private ServerSocket serverSocket;
 
     Button button_disconnect;
     @Override
@@ -47,20 +48,46 @@ public class HostTabActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_host_tab);
 
-        // Get a support ActionBar corresponding to this toolbar
+        // Get a support ActionBar to support upNavigation
         ActionBar ab = getSupportActionBar();
         // Enable the Up button
         ab.setDisplayHomeAsUpEnabled(true);
 
-        //serverip
-        wmanager=(WifiManager) getSystemService(WIFI_SERVICE);
-        SERVERIP = Formatter.formatIpAddress(wmanager.getConnectionInfo().getIpAddress());
+
         serverStatus = (TextView) findViewById(R.id.textView_ip);
 
+        SERVERIP = "Can't Connect";
+        String interfaceName = new String();
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface iface = interfaces.nextElement();
+                //Log.i(TAG, "iface-next --> " + iface);
+                // filters out 127.0.0.1 and inactive interfaces
+                if (iface.isLoopback() || !iface.isUp()) {continue;}
 
-        Thread fst = new Thread(new ServerThread());
-        fst.start();
+                Enumeration<InetAddress> addresses = iface.getInetAddresses();
+                while(addresses.hasMoreElements()) {
+                    InetAddress addr = addresses.nextElement();
 
+                    // *EDIT*
+                    if (addr instanceof Inet6Address) {continue;}
+
+                    SERVERIP = addr.getHostAddress();
+                    interfaceName = iface.getDisplayName();
+                    Log.i(TAG, "Interface Name: " + interfaceName);
+                    Log.i(TAG, "Interface IP  : " + SERVERIP);
+                }
+            }
+        } catch (SocketException e) {
+            throw new RuntimeException(e);
+        }
+        serverStatus.setText("Host IP: " + SERVERIP);
+        Log.i(TAG, serverStatus.getText().toString());
+
+
+
+        // Tab layout
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.addTab(tabLayout.newTab().setText("Connections"));
         tabLayout.addTab(tabLayout.newTab().setText("Traffic"));
@@ -88,6 +115,8 @@ public class HostTabActivity extends AppCompatActivity {
             }
         });
 
+
+        // Disconnect button
         button_disconnect = (Button) findViewById(R.id.button_disconnect);
         button_disconnect.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -97,49 +126,6 @@ public class HostTabActivity extends AppCompatActivity {
         });
     }
 
-    public class ServerThread implements Runnable {
-
-        public void run() {
-            try {
-                if (SERVERIP != null) {
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            serverStatus.setText("Host IP: " + SERVERIP);
-                        }
-                    });
-
-                } else {
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            serverStatus.setText("Couldn't detect internet connection.");
-                        }
-                    });
-                }
-            } catch (Exception e) {
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        serverStatus.setText("Error");
-                    }
-                });
-                e.printStackTrace();
-            }
-        }
-    }
-
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        try {
-            // MAKE SURE YOU CLOSE THE SOCKET UPON EXITING
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 /*
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
