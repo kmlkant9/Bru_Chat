@@ -12,9 +12,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
 
 import static com.example.kmlkant3497.bru_chat.R.id.button_join;
@@ -25,6 +30,7 @@ public class Login_Activity extends AppCompatActivity {
     // helps in Debugging (via LOG messages)
     private static final String TAG = "Login_Activity.java";
 
+    private boolean connected = false;
     public Button button_join;
     public EditText editText_ip;
     String ip_address = new String();
@@ -81,6 +87,9 @@ public class Login_Activity extends AppCompatActivity {
                 // Open next corresponding activity
                 Log.d(TAG, "IP-" + ip_address + " is Correct");
                 Toast.makeText(getApplicationContext(), "Welcome !..", Toast.LENGTH_SHORT).show();
+
+
+
                 Intent myIntent = new Intent(Login_Activity.this,ClientActivity.class);
                 startActivity(myIntent);
             }
@@ -111,10 +120,39 @@ public class Login_Activity extends AppCompatActivity {
                     InetAddress address = InetAddress.getByName(ip_address);
                     if (address instanceof Inet6Address || address instanceof Inet4Address) {
                         // It's ipv4
+
+                        Log.d("LoginActivity", "C: Connecting...");
+                        //Socket socket = new Socket(serverAddr, ServerActivity.SERVERPORT);
+                        Socket socket = new Socket(address, 8080);
+                        //connected = true;
+//                        while (connected) {
+//                            try {
+//                                Log.d("LoginActivity", "C: Sending command.");
+//                                PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket
+//                                        .getOutputStream())), true);
+//                                // WHERE YOU ISSUE THE COMMANDS
+//                                System.out.println("Hey Server!");
+//                                Log.d("LoginActivity", "C: Sent.");
+//
+//                                connected=false;
+//                            } catch (Exception e) {
+//                                Log.e("LoginActivity", "S: Error", e);
+//                                return false;
+//                            }
+//                        }
+//                        socket.close();
+//                        Log.d("LoginActivity", "C: Closed.");
                         return true;
                     }
                 } catch (UnknownHostException ex) {
                     Log.d(TAG, ex.toString());
+                } catch (IOException e) {
+                    Log.e("ClientActivity", "C: Error", e);
+                    Toast.makeText(getApplicationContext(), "Connection Refused", Toast.LENGTH_SHORT).show();
+                    connected = false;
+                    e.printStackTrace();
+                } catch (Exception e){
+                    Log.e("ClientActivity", "C: Error", e);
                 }
             }
             return false;
