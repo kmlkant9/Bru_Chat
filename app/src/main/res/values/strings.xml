@@ -4,6 +4,8 @@
     <string name="client">Connected peers</string>
     <string name="host">Host</string>
     <string name="chat">Chat</string>
+    <string name="ip">IP</string>
+    <string name="username">Username</string>
 
     <string-array name="dummy_data">
         <item>One</item>

@@ -21,6 +21,7 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
 import static com.example.kmlkant3497.bru_chat.R.id.button_join;
 import static com.example.kmlkant3497.bru_chat.R.id.useLogo;
@@ -30,10 +31,17 @@ public class Login_Activity extends AppCompatActivity {
     // helps in Debugging (via LOG messages)
     private static final String TAG = "Login_Activity.java";
 
+    public static String username,sndr,rcvr,ip_address;
     private boolean connected = false;
     public Button button_join;
     public EditText editText_ip;
-    String ip_address = new String();
+    public EditText editText_usrname;
+
+    public EditText editText_sndr;
+    public EditText editText_rcvr;
+
+    public static Socket socket;
+    private final ByteBuffer buffer = ByteBuffer.allocate( 16384 );
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +55,10 @@ public class Login_Activity extends AppCompatActivity {
         ab.setDisplayHomeAsUpEnabled(true);
 
         editText_ip = (EditText) findViewById(R.id.editText_ip);
+        editText_usrname = (EditText) findViewById(R.id.editText_name);
+        editText_sndr = (EditText) findViewById(R.id.editText_sender);
+        editText_rcvr = (EditText) findViewById(R.id.editText_receiver);
+
 
         button_join = (Button) findViewById(R.id.button_join);
         button_join.setOnClickListener(new View.OnClickListener() {
@@ -54,19 +66,10 @@ public class Login_Activity extends AppCompatActivity {
             public void onClick(View v) {
                 // Retrieve the IP address written in editText
                 ip_address = editText_ip.getText().toString();
+                username = editText_usrname.getText().toString();
+                sndr = editText_sndr.getText().toString();
+                rcvr = editText_rcvr.getText().toString();
                 new MyAsyncTask().execute(ip_address);
-                // Check if the IP address entered is correct or not
-//                if (isCorrect(ip_address)){
-//                    // Open next corresponding activity
-//                    Log.d(TAG, "IP-" + ip_address + " is Correct");
-//                    Toast.makeText(getApplicationContext(), "Welcome !..", Toast.LENGTH_SHORT).show();
-//                    Intent myIntent = new Intent(Login_Activity.this,ClientActivity.class);
-//                    startActivity(myIntent);
-//                }
-//                else {
-//                    Log.d(TAG, "IP-" + ip_address + " is InCorrect");
-//                    Toast.makeText(getApplicationContext(), "Incorrect IP !..", Toast.LENGTH_SHORT).show();
-//                }
             }
         });
     }
@@ -123,25 +126,9 @@ public class Login_Activity extends AppCompatActivity {
 
                         Log.d("LoginActivity", "C: Connecting...");
                         //Socket socket = new Socket(serverAddr, ServerActivity.SERVERPORT);
-                        Socket socket = new Socket(address, 8080);
-                        //connected = true;
-//                        while (connected) {
-//                            try {
-//                                Log.d("LoginActivity", "C: Sending command.");
-//                                PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket
-//                                        .getOutputStream())), true);
-//                                // WHERE YOU ISSUE THE COMMANDS
-//                                System.out.println("Hey Server!");
-//                                Log.d("LoginActivity", "C: Sent.");
-//
-//                                connected=false;
-//                            } catch (Exception e) {
-//                                Log.e("LoginActivity", "S: Error", e);
-//                                return false;
-//                            }
-//                        }
-//                        socket.close();
-//                        Log.d("LoginActivity", "C: Closed.");
+                        socket = new Socket(address, 8080);
+                        socket.close();
+                        Log.d("LoginActivity", socket.toString());
                         return true;
                     }
                 } catch (UnknownHostException ex) {
@@ -153,6 +140,9 @@ public class Login_Activity extends AppCompatActivity {
                     e.printStackTrace();
                 } catch (Exception e){
                     Log.e("ClientActivity", "C: Error", e);
+                }finally {
+                    try{socket.close();
+                    }catch (IOException e){}
                 }
             }
             return false;
