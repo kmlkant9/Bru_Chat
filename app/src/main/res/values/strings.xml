@@ -3,7 +3,7 @@
     <string name="login">Login</string>
     <string name="client">Connected peers</string>
     <string name="host">Host</string>
-    <string name="chat">Chat</string>
+    <string name="chat">Name</string>
     <string name="ip">IP</string>
     <string name="username">Username</string>
 
