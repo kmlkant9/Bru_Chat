@@ -61,6 +61,7 @@ public class HostTabActivity extends AppCompatActivity {
 
     private final ByteBuffer buffer = ByteBuffer.allocate( 16384 );
     Map<Integer, SocketChannel> clients = new HashMap<Integer, SocketChannel>();
+    Map<SocketChannel, Integer> clientNumbers = new HashMap<>();
     Map<Integer, String> clientNames = new HashMap<>();
 
     Button button_disconnect;
@@ -206,7 +207,7 @@ public class HostTabActivity extends AppCompatActivity {
                 Selector selector = Selector.open();
                 ssc.register( selector, SelectionKey.OP_ACCEPT);
                 Log.i(hostTag, "Listening on port "+ SERVERPORT);
-                Map<Integer, SocketChannel> clients = new HashMap<Integer, SocketChannel>();
+                //Map<Integer, SocketChannel> clients = new HashMap<Integer, SocketChannel>();
                 int mappingNo = 1;
 
                 while(true) {
@@ -243,7 +244,8 @@ public class HostTabActivity extends AppCompatActivity {
                             sc.configureBlocking( false );
 
                             //store channel in Map
-                            clients.put(mappingNo++, sc);
+                            clients.put(mappingNo, sc);
+                            clientNumbers.put(sc, mappingNo++);
 
                             // Register it with the selector, for reading
                             sc.register( selector, SelectionKey.OP_READ );
@@ -255,10 +257,31 @@ public class HostTabActivity extends AppCompatActivity {
 
                                 boolean ok = TMessage.recvMessage(sc, buffer);
 
+                                //check if message is for server
+                                if(ok && TMessage.receiver.equals("0")) {
+                                    clientNames.put(clientNumbers.get( sc ), TMessage.msg);
+                                    TMessage.sender = "0";
+
+                                    int senderNumber = clientNumbers.get( sc );
+                                    String msg = TMessage.msg;
+
+                                    for (Map.Entry<Integer, SocketChannel> entry : clients.entrySet())
+                                    {   //format 0_i_NAME_sc_username
+                                        if(!entry.getValue().equals(sc)) {
+                                            TMessage.receiver = entry.getKey().toString();
+                                            TMessage.msg = "NAME_"+senderNumber+ "_"+ msg;
+                                            TMessage.sendMessage(buffer, clients);
+                                        }
+                                    }
+
+                                    //send msg back to client with its mappingNumber
+                                    TMessage.receiver = clientNumbers.get(sc).toString();
+                                    TMessage.msg = msg;
+
+                                }
+
                                 //Sending msg
-                                TMessage.sender = TMessage.sender;
-                                TMessage.receiver = TMessage.receiver;
-                                TMessage.msg = TMessage.msg;
+                                TMessage.sendMessage(buffer, clients);
 
                                 // update to traffic
                                 trafficHandler.post(new Runnable() {
@@ -270,7 +293,6 @@ public class HostTabActivity extends AppCompatActivity {
                                     }
                                 });
 
-                                TMessage.sendMessage(buffer, clients);
 
                                 // If the connection is dead, then remove it
                                 // from the selector and close it
