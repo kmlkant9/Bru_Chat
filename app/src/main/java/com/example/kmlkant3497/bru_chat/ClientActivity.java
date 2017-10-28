@@ -36,7 +36,9 @@ public class ClientActivity extends AppCompatActivity {
     public Button button_leave;
     private Socket l_socket = Login_Activity.socket;
 
-    String TAG;
+    public static SocketChannel channel;
+    public static Selector selector;
+    String TAG = "clientActivity";
     String usrname = Login_Activity.username;
     private final ByteBuffer buffer = ByteBuffer.allocate(16384);
     Map<Integer, String> clientNames = new HashMap<>();
@@ -97,7 +99,7 @@ public class ClientActivity extends AppCompatActivity {
 
     class clientThread implements Runnable {
         private final String clientTag = "clientTHREAD";
-
+        boolean finished = false;
         @Override
         public void run() {
             try {
@@ -106,8 +108,8 @@ public class ClientActivity extends AppCompatActivity {
                 Log.d(TAG, "Port Created");
                 InetSocketAddress serverAddress = new InetSocketAddress(
                         serverIPAddress, port);
-                Selector selector = Selector.open();
-                SocketChannel channel = SocketChannel.open();
+                selector = Selector.open();
+                channel = SocketChannel.open();
                 Log.d(TAG, "Channel open");
                 channel.configureBlocking(false);
                 channel.connect(serverAddress);
@@ -116,16 +118,17 @@ public class ClientActivity extends AppCompatActivity {
                 channel.register(selector, operations);
                 Log.d(TAG, "registered");
 
-                while (true) {
+                while (!finished) {
+                    Log.d(TAG, "inside while");
                     if (selector.select() > 0) {
                         Log.d(TAG, "select>0");
-                        boolean doneStatus = processReadySet(selector.selectedKeys());
+                        boolean doneStatus = clientProcessReadySet(selector.selectedKeys(), channel, selector);
                         if (doneStatus) {
                             break;
                         }
                     }
                 }
-                channel.close();
+                //channel.close();
 
             } catch (UnknownHostException ex) {
                 Log.d(TAG, ex.toString());
@@ -138,7 +141,7 @@ public class ClientActivity extends AppCompatActivity {
         }
 
 
-    public boolean processReadySet(Set readySet) throws Exception {
+    public boolean clientProcessReadySet(Set readySet, SocketChannel channel, Selector selector) throws Exception {
         Iterator iterator = readySet.iterator();
         while (iterator.hasNext()) {
             SelectionKey key = (SelectionKey)
@@ -152,8 +155,8 @@ public class ClientActivity extends AppCompatActivity {
                 }
             }
             if (key.isReadable()) {
-                String msg = processRead(key);
-                System.out.println("[Server]: " + msg);
+                boolean ok = CMessage.recvMessage(channel,buffer);
+                Log.d(TAG,"[Server]: " + ok);
             }
             if (key.isWritable()) {
                 System.out.print("Please enter a message(Bye to quit):");
@@ -169,6 +172,16 @@ public class ClientActivity extends AppCompatActivity {
                 CMessage.sendMessage(sChannel, buffer);
                 //ByteBuffer buffer = ByteBuffer.wrap(msg.getBytes());
                 //sChannel.write(buffer);
+
+                //
+                int interestSet = SelectionKey.OP_CONNECT | SelectionKey.OP_READ;
+                channel.register(selector, interestSet);
+
+                //TODO needs to finish after receiving its index code
+                finished = true;
+
+
+
             }
         }
         return false; // Not done yet
