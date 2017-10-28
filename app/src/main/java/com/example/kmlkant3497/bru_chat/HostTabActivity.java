@@ -42,6 +42,9 @@ import android.widget.Button;
 
 public class HostTabActivity extends AppCompatActivity {
 
+    // handler to handle traffic
+    private Handler trafficHandler;
+
     // helps in Debugging (via LOG messages)
     private static final String TAG = "HostTabActivity.java";
 
@@ -52,6 +55,10 @@ public class HostTabActivity extends AppCompatActivity {
 
     // DESIGNATE A PORT
     public static final int SERVERPORT = 8080;
+
+    // get fragment
+    public static TrafficFragment trafficFragment;
+
     private final ByteBuffer buffer = ByteBuffer.allocate( 16384 );
     Map<Integer, SocketChannel> clients = new HashMap<Integer, SocketChannel>();
     Map<Integer, String> clientNames = new HashMap<>();
@@ -66,6 +73,8 @@ public class HostTabActivity extends AppCompatActivity {
         ActionBar ab = getSupportActionBar();
         // Enable the Up button
         ab.setDisplayHomeAsUpEnabled(true);
+
+        trafficHandler = new Handler();
 
 
         serverStatus = (TextView) findViewById(R.id.textView_ip);
@@ -98,7 +107,6 @@ public class HostTabActivity extends AppCompatActivity {
         }
         serverStatus.setText("Host IP: " + SERVERIP);
         Log.i(TAG, serverStatus.getText().toString());
-
 
 
         // Tab layout
@@ -145,6 +153,8 @@ public class HostTabActivity extends AppCompatActivity {
         thd.start();
         Log.i(TAG, "started network thread");
 
+        // initialise fragment
+        trafficFragment = new TrafficFragment();
 
     }
 
@@ -249,6 +259,17 @@ public class HostTabActivity extends AppCompatActivity {
                                 TMessage.sender = TMessage.sender;
                                 TMessage.receiver = TMessage.receiver;
                                 TMessage.msg = TMessage.msg;
+
+                                // update to traffic
+                                trafficHandler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        String composite = TMessage.sender + " -> " + TMessage.receiver + ": " + TMessage.msg;
+                                        trafficFragment.setListViewTraffic(composite);
+                                        Log.d(TAG, composite);
+                                    }
+                                });
+
                                 TMessage.sendMessage(buffer, clients);
 
                                 // If the connection is dead, then remove it
