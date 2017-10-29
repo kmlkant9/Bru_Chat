@@ -372,7 +372,7 @@ class TMessage{
 
         // Preparing the buffer
         buffer.clear();
-        buffer.put((TMessage.sender + "_" + TMessage.receiver + "_" + TMessage.msg ).getBytes());
+        buffer.put((TMessage.sender + "_" + TMessage.receiver + "_" + TMessage.msg + "\n").getBytes());
         buffer.flip();
 
         // Retrieving the client's socket from "client's MAP" (global variable - see above)

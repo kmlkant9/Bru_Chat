@@ -5,17 +5,13 @@ import android.os.AsyncTask;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -23,22 +19,17 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
-import static com.example.kmlkant3497.bru_chat.R.id.button_join;
-import static com.example.kmlkant3497.bru_chat.R.id.useLogo;
-
 public class Login_Activity extends AppCompatActivity {
 
     // helps in Debugging (via LOG messages)
     private static final String TAG = "Login_Activity.java";
 
-    public static String username,sndr,rcvr,ip_address;
+    public static String username, ip_address;
     private boolean connected = false;
     public Button button_join;
     public EditText editText_ip;
     public EditText editText_usrname;
 
-    public EditText editText_sndr;
-    public EditText editText_rcvr;
 
     public static Socket socket;
     private final ByteBuffer buffer = ByteBuffer.allocate( 16384 );
@@ -56,8 +47,6 @@ public class Login_Activity extends AppCompatActivity {
 
         editText_ip = (EditText) findViewById(R.id.editText_ip);
         editText_usrname = (EditText) findViewById(R.id.editText_name);
-        editText_sndr = (EditText) findViewById(R.id.editText_sender);
-        editText_rcvr = (EditText) findViewById(R.id.editText_receiver);
 
 
         button_join = (Button) findViewById(R.id.button_join);
@@ -67,16 +56,14 @@ public class Login_Activity extends AppCompatActivity {
                 // Retrieve the IP address written in editText
                 ip_address = editText_ip.getText().toString();
                 username = editText_usrname.getText().toString();
-                sndr = editText_sndr.getText().toString();
-                rcvr = editText_rcvr.getText().toString();
-                new MyAsyncTask().execute(ip_address);
+                new ValidateIP().execute(ip_address);
             }
         });
     }
 
 
 
-    public class MyAsyncTask extends AsyncTask<String,String,Boolean>{
+    public class ValidateIP extends AsyncTask<String,String,Boolean>{
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -92,8 +79,7 @@ public class Login_Activity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Welcome !..", Toast.LENGTH_SHORT).show();
 
 
-
-                Intent myIntent = new Intent(Login_Activity.this,ClientActivity.class);
+                Intent myIntent = new Intent(Login_Activity.this, ChatActivity.class);
                 startActivity(myIntent);
             }
             else {
@@ -126,9 +112,10 @@ public class Login_Activity extends AppCompatActivity {
 
                         Log.d("LoginActivity", "C: Connecting...");
                         //Socket socket = new Socket(serverAddr, ServerActivity.SERVERPORT);
-                        socket = new Socket(address, 8080);
-                        socket.close();
-                        Log.d("LoginActivity", socket.toString());
+                        //socket = new Socket(address, 8080);
+                        //socket.close();
+                        //Log.d("LoginActivity", socket.toString());
+                        Log.d(TAG, "IP has been validated");
                         return true;
                     }
                 } catch (UnknownHostException ex) {
@@ -141,8 +128,8 @@ public class Login_Activity extends AppCompatActivity {
                 } catch (Exception e){
                     Log.e("ClientActivity", "C: Error", e);
                 }finally {
-                    try{socket.close();
-                    }catch (IOException e){}
+                    //try{socket.close();
+                    //}catch (IOException e){}
                 }
             }
             return false;

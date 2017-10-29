@@ -103,6 +103,7 @@ public class ClientActivity extends AppCompatActivity {
         @Override
         public void run() {
             try {
+                // Socket and Selector initialisation
                 InetAddress serverIPAddress = InetAddress.getByName(Login_Activity.ip_address);
                 int port = 8080;
                 Log.d(TAG, "Port Created");
@@ -163,8 +164,8 @@ public class ClientActivity extends AppCompatActivity {
                 Log.d(TAG, "Message1");
 //                String msg = userInputReader.readLine();
                 CMessage.msg = Login_Activity.username;
-                CMessage.sender = Login_Activity.sndr;
-                CMessage.receiver = Login_Activity.rcvr;
+                //CMessage.sender = Login_Activity.sndr;
+                //CMessage.receiver = Login_Activity.rcvr;
 //                if (msg.equalsIgnoreCase("bye")) {
 //                    return true; // Exit
 //                }
@@ -223,13 +224,17 @@ class CMessage {
     }
 
     public static boolean sendMessage(SocketChannel sc, ByteBuffer buffer) throws IOException {
-        Log.i(msgTAG, "From: "+CMessage.sender+" to: "+CMessage.receiver);
-        String tempMessage = (CMessage.sender+ "_" +CMessage.receiver+ "_"+CMessage.msg );
+        Log.i(msgTAG, "From: " + CMessage.sender + " to: " + CMessage.receiver);
+        String tempMessage = (CMessage.sender + "_" + CMessage.receiver + "_" + CMessage.msg );
         Log.d(msgTAG, tempMessage);
+
+        // Writing 'message' to 'buffer'
         buffer.clear();
-        buffer.put((CMessage.sender+ "_" +CMessage.receiver+ "_"+CMessage.msg ).getBytes());
+        buffer.put((tempMessage).getBytes());
         buffer.flip();
+
         Log.d(msgTAG, "still working");
+        // Writing 'buffer' to 'socket'
         while(buffer.hasRemaining()) {
             sc.write(buffer);
         }
@@ -238,11 +243,12 @@ class CMessage {
 
     public static boolean recvMessage(SocketChannel sc, ByteBuffer buffer) throws IOException {
         Log.i(msgTAG, "Receiving a message");
+        // Retrieving 'message' into 'buffer'
         buffer.clear();
         sc.read( buffer );
         buffer.flip();
 
-        // If no data, close the connection
+        // If 'buffer' is empty
         if (buffer.limit()==0) {
             return false;
         }
@@ -250,8 +256,13 @@ class CMessage {
         CMessage.clear();
         int msgSection=0;
 
+        // If 'buffer' is non-empty
+        // Read the 'buffer'
         for(int i=0; i<buffer.limit(); i++) {
+            // Reading the 'i-th' byte in buffer
             char b=(char)(buffer.get( i ) & 0xFF);
+
+            // Parsing the message
             if(msgSection == 2) {
                 CMessage.msg+=b;
             } else if(msgSection == 1){
@@ -262,9 +273,12 @@ class CMessage {
                 else CMessage.sender+=b;
             }
         }
+
+        // Displaying LOGs
         Log.i(msgTAG, CMessage.sender);
         Log.i(msgTAG, CMessage.receiver);
         Log.i(msgTAG, CMessage.msg);
+
         return true;
     }
 }

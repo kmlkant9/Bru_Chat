@@ -1,5 +1,6 @@
 package com.example.kmlkant3497.bru_chat;
 
+import android.nfc.Tag;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.support.v7.app.ActionBar;
@@ -13,9 +14,15 @@ import android.widget.TextView;
 
 import org.w3c.dom.Text;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -35,9 +42,14 @@ public class ChatActivity extends AppCompatActivity {
     public TextView textView_message;
     private String TAG = "chatActivity";
     public String my_message;
+
+    public static Socket socket;
     private final ByteBuffer buffer = ByteBuffer.allocate(16384);
 
-    private Handler receiveHandler=new Handler();
+    public EditText editText_sndr;
+    public EditText editText_rcvr;
+
+    private Handler receiveHandler;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,19 +62,11 @@ public class ChatActivity extends AppCompatActivity {
         button_send = (Button) findViewById(R.id.button_send);
         textView_message = (TextView) findViewById(R.id.textView_chat_history);
         Log.i(TAG, "Client: starting network thread");
-        Thread thd = new Thread(new ChatActivity.clientThread());
+        Thread thd = new Thread(new ChatActivity.receiveMessages());
         thd.start();
         Log.i(TAG, "Client: started network thread");
 
-        //button ClickListener
-        button_send.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                my_message = editText_message.getText().toString();
-                editText_message.setText("");
-                new sendAsyncTask().execute();
-            }
-        });
+        receiveHandler = new Handler();
 
         ActionBar ab = getSupportActionBar();
         ab.setDisplayHomeAsUpEnabled(true);
@@ -76,121 +80,123 @@ public class ChatActivity extends AppCompatActivity {
         }
         catch(Exception ex){Log.d(TAG,"Support fail "+ex.toString());}
 
+        editText_sndr = (EditText) findViewById(R.id.sender_editText);
+        editText_rcvr = (EditText) findViewById(R.id.receiver_editText);
+
+        Log.d(TAG, "one");
+
+        //button ClickListener
+        button_send.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                CMessage.sender = editText_sndr.getText().toString();
+                CMessage.receiver = editText_rcvr.getText().toString();
+                CMessage.msg = editText_message.getText().toString();
+                editText_message.setText("");
+                new sendAsyncTask().execute();
+            }
+        });
+
+        Log.d(TAG, "two");
     }
 
     public void setReceivedMessage(String value){
         textView_message.append(value+"\n");
     }
 
-     class sendAsyncTask extends AsyncTask<String,String,String>{
+    class sendAsyncTask extends AsyncTask<String,String,String>{
          @Override
          protected void onPreExecute() {
+             Log.d(TAG, "************onPreExecute()");
              super.onPreExecute();
          }
 
          @Override
          protected void onPostExecute(String s) {
+             Log.d(TAG, "************onPostExecute()");
              super.onPostExecute(s);
              try{
-             textView_message.append(CMessage.msg+"\n");}
-             catch (Exception ex){Log.d(TAG,ex.toString());}
+             textView_message.append(s+"\n");
+             } catch (Exception ex){Log.d(TAG,ex.toString());}
          }
 
          @Override
          protected String doInBackground(String... strings) {
-             if(my_message.isEmpty()) my_message = "No_message";
-             CMessage.msg = my_message;
-             CMessage.sender = Login_Activity.sndr;
-             CMessage.receiver = Login_Activity.rcvr;
-             Log.d(TAG,my_message);
-             try{CMessage.sendMessage(ClientActivity.channel, buffer);}
-             catch (IOException ex){Log.d(TAG,ex.toString());}
-             catch (Exception ex) {Log.d(TAG,ex.toString());}
-             return null;
+
+             Log.i(TAG, "************doInBackground()");
+             String sendMessage;
+             // sending to client (pwrite object)
+             OutputStream ostream = null;
+             try {
+                 ostream = socket.getOutputStream();
+             } catch (IOException e) {
+                 e.printStackTrace();
+             }
+
+             PrintWriter pwrite = new PrintWriter(ostream, true);
+             sendMessage = CMessage.msg;
+             sendMessage = CMessage.sender + "_" + CMessage.receiver + "_" + sendMessage;
+             pwrite.print(sendMessage);       // sending to server
+             pwrite.flush();                    // flush the data
+
+             Log.d(TAG, "*/*/*/*/*/* message has been sent");
+
+             Log.d(TAG,"Sent Message is: " + sendMessage);
+
+             return sendMessage;
          }
      }
 
-    class clientThread implements Runnable {
+    class receiveMessages implements Runnable{
+        private String receiveMessage;
 
+        private String TAG = "recvMessage Thread";
         @Override
         public void run() {
+            Log.d(TAG, "in receiveMessages Thread");
             try {
-                Selector selector = ClientActivity.selector;
-                SocketChannel channel = ClientActivity.channel;
-                Log.d(TAG, "Channel open"+channel.socket());
-                //channel.configureBlocking(false);
-                int operations = SelectionKey.OP_CONNECT | SelectionKey.OP_READ;
-                channel.register(selector, operations);
-                Log.d(TAG, "registered");
-
-                while (true) {
-                    if (selector.select() > 0) {
-                        Log.d(TAG, "select>0");
-                        boolean doneStatus = processReadySet(selector.selectedKeys(), channel, selector);
-                        if (doneStatus) {
-                            break;
-                        }
-                    }
-                }
-                channel.close();
-
-            } catch (UnknownHostException ex) {
-                Log.d(TAG, ex.toString());
-            } catch (IOException ex) {
-                Log.d(TAG, ex.toString());
-            } catch (Exception ex) {
-                Log.d(TAG, ex.toString());
+                socket = new Socket(Login_Activity.ip_address, 8080);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            Log.d(TAG, "socket made");
 
-        }
+            InputStream istream = null;
+            try {
+                istream = socket.getInputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Log.d(TAG, "after try catch");
+            BufferedReader receiveRead = new BufferedReader(new InputStreamReader(istream));
 
+            Log.d(TAG, "before while(true)");
+            while (true) {
+                try {
+                    Log.d(TAG, "while > try");
+                    if ((receiveMessage = receiveRead.readLine()) != null) //receive from server
+                    {
+                        Log.d(TAG, "while > try > if");
+                        //System.out.println(receiveMessage); // displaying at DOS prompt
 
-        public boolean processReadySet(Set readySet, SocketChannel channel, Selector selector) throws Exception {
-            Iterator iterator = readySet.iterator();
-            while (iterator.hasNext()) {
-                SelectionKey key = (SelectionKey)
-                        iterator.next();
-                iterator.remove();
-                if (key.isReadable()) {
-                    try {
-                        boolean ok = CMessage.recvMessage(channel, buffer);
-                        Log.d(TAG, "Received above message");
                         //TODO textView_message.append(CMessage.msg);
                         receiveHandler.post(new Runnable() {
                             @Override
                             public void run() {
                                 try {
-                                    String composite = CMessage.sender + " -> " + CMessage.receiver + ": " + CMessage.msg;
-                                    setReceivedMessage(composite);
+                                    setReceivedMessage(receiveMessage);
                                 } catch (NullPointerException ex) {
                                     Log.d(TAG, "inside run.."+ex.toString());
                                 }
                             }
                         });
-                    }catch (Exception ex){Log.d(TAG,"outside run.."+ex.toString());}
+
+                        Log.d(TAG, "Recieved msg is: " + receiveMessage);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
-            return false; // Not done yet
-        }
-
-        public boolean processConnect(SelectionKey key) throws Exception {
-            SocketChannel channel = (SocketChannel) key.channel();
-            while (channel.isConnectionPending()) {
-                channel.finishConnect();
-            }
-            return true;
-        }
-
-        public String processRead(SelectionKey key) throws Exception {
-            SocketChannel sChannel = (SocketChannel) key.channel();
-            ByteBuffer buffer = ByteBuffer.allocate(1024);
-            sChannel.read(buffer);
-            buffer.flip();
-            Charset charset = Charset.forName("UTF-8");
-            CharsetDecoder decoder = charset.newDecoder();
-            CharBuffer charBuffer = decoder.decode(buffer);
-            String msg = charBuffer.toString();
-            return msg;
         }
     }
 }
