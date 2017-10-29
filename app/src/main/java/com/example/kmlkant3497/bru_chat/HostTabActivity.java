@@ -191,11 +191,15 @@ public class HostTabActivity extends AppCompatActivity {
 
         @Override
         public void run() {
-            try{
+            try{ // FIRST try
                 Log.i(hostTag, "on network thread");
+
+                // ** ** ** Creating the ServerSocketChannel ** ** **
                 ServerSocketChannel ssc = ServerSocketChannel.open();
                 ssc.configureBlocking( false );
+                // Retrieving the server socket
                 ServerSocket ss = ssc.socket();
+                // Binding the port-number to socket
                 InetSocketAddress isa;
                 try {
                     isa = new InetSocketAddress( SERVERPORT );
@@ -204,42 +208,37 @@ public class HostTabActivity extends AppCompatActivity {
                     Log.i(hostTag, e.toString());
                 }
 
+                // ** ** ** Attaching 'selector' to 'socket' ** ** **
                 // Create a new Selector for selecting
                 Selector selector = Selector.open();
+                // Registering socket with selector to listen for "OP_ACCEPT" (accepting new connections)
                 ssc.register( selector, SelectionKey.OP_ACCEPT);
                 Log.i(hostTag, "Listening on port "+ SERVERPORT);
-                //Map<Integer, SocketChannel> clients = new HashMap<Integer, SocketChannel>();
+
                 int mappingNo = 1;
 
                 while(true) {
                     Log.i(hostTag, "InfiLoop");
-                    // See if we've had any activity -- either
-                    // an incoming connection, or incoming data on an
-                    // existing connection
-                    int num=0;
-                    try {
-                        num = selector.select();
-                        Log.i(hostTag, "after selector");
-                    }catch (Exception e) {
-                        Log.i(hostTag, "error in selector"+e.toString());
-                    }
-
-                    if (num == 0) {
-                        Log.i(hostTag, "No connections this iter");
-                        continue;
-                    }
+                    // Blocks till some activity occurs on sockets
+                    selector.select();
 
                     Log.i(hostTag, "Got some connections");
+
                     Set keys = selector.selectedKeys();
-                    Iterator it = keys.iterator();
-                    while(it.hasNext()) {
+                    Iterator iter = keys.iterator();
+
+                    while(iter.hasNext()) {
                         Log.i(hostTag, "while hasNext");
-                        SelectionKey key = (SelectionKey)it.next();
+                        SelectionKey key = (SelectionKey)iter.next();
+
                         // What kind of activity is it?
+                        // "Got a new connection!"
                         if ((key.readyOps() & SelectionKey.OP_ACCEPT) ==
                                 SelectionKey.OP_ACCEPT) {
                             Socket s = ss.accept();
-                            Log.i(hostTag, "Got connection from "+s+" Assigned idx: "+mappingNo);
+                            String address = (new StringBuilder( s.getInetAddress().toString() ))
+                                    .append(":").append( s.getPort() ).toString();
+                            Log.i(hostTag, "Got connection from " + address + " Assigned idx: " + mappingNo);
 
                             SocketChannel sc = s.getChannel();
                             sc.configureBlocking( false );
@@ -250,7 +249,9 @@ public class HostTabActivity extends AppCompatActivity {
 
                             // Register it with the selector, for reading
                             sc.register( selector, SelectionKey.OP_READ );
-                        }else if ((key.readyOps() & SelectionKey.OP_READ) ==
+                        }
+                        // "Got a new message from client!"
+                        else if ((key.readyOps() & SelectionKey.OP_READ) ==
                                 SelectionKey.OP_READ) {
                             SocketChannel sc = null;
                             try {
@@ -291,10 +292,10 @@ public class HostTabActivity extends AppCompatActivity {
                                     });
                                 }
 
-                                            //Sending msg
-                                            TMessage.sendMessage(buffer, clients);
+                                //Sending 'msg' to corresponding client
+                                TMessage.sendMessage(buffer, clients);
 
-                                // update to traffic
+                                // update the 'traffic' activity-fragment
                                 trafficHandler.post(new Runnable() {
                                     @Override
                                     public void run() {
@@ -338,12 +339,14 @@ public class HostTabActivity extends AppCompatActivity {
                     // We remove the selected keys, because we've dealt
                     // with them.
                     keys.clear();
-                }//while
-            }catch(IOException ioe) {
+                }// while(true)
+
+            }// FIRST try
+            catch(IOException ioe) {
                 Log.e("hostThread", ioe.toString());
             }
 
-        }//run()
+        }// void run()
 
     }
 
@@ -365,48 +368,69 @@ class TMessage{
     }
 
     public static boolean sendMessage(ByteBuffer buffer, Map<Integer, SocketChannel> clients) throws IOException {
-        Log.i(msgTAG, "From: "+TMessage.sender+" to: "+TMessage.receiver);
+        Log.i(msgTAG, "From: " + TMessage.sender+" to: " + TMessage.receiver);
 
+        // Preparing the buffer
         buffer.clear();
-        buffer.put((TMessage.sender+ "_" +TMessage.receiver+ "_"+TMessage.msg ).getBytes());
+        buffer.put((TMessage.sender + "_" + TMessage.receiver + "_" + TMessage.msg ).getBytes());
         buffer.flip();
 
+        // Retrieving the client's socket from "client's MAP" (global variable - see above)
         SocketChannel csc = clients.get( Integer.parseInt( TMessage.receiver ) );
+        // Writing buffer to client's socket
         while(buffer.hasRemaining()) {
             csc.write(buffer);
         }
+
         return true;
     }
 
     public static boolean recvMessage(SocketChannel sc, ByteBuffer buffer) throws IOException {
         Log.i(msgTAG, "Receiving a message");
+
         buffer.clear();
+        // Retrieving contents of socket (sc) into the 'buffer'
         sc.read( buffer );
         buffer.flip();
 
-        // If no data, close the connection
+        // If buffer is empty
         if (buffer.limit()==0) {
             return false;
         }
 
+
         TMessage.clear();
         int msgSection=0;
 
+        // If buffer is non-empty
+        // Read the buffer
         for(int i=0; i<buffer.limit(); i++) {
-            char b=(char)(buffer.get( i ) & 0xFF);
+            // Reading the 'i-th' byte in buffer
+            char b = (char)(buffer.get(i) & 0xFF);
+
+            // Parsing the message
             if(msgSection == 2) {
-                TMessage.msg+=b;
-            } else if(msgSection == 1){
-                if(b=='_') msgSection++;
-                else TMessage.receiver+=b;
-            } else {
-                if(b=='_') msgSection++;
-                else TMessage.sender+=b;
+                TMessage.msg += b;
+            }
+            else if(msgSection == 1){
+                if(b=='_')
+                    msgSection++;
+                else
+                    TMessage.receiver += b;
+            }
+            else {
+                if(b=='_')
+                    msgSection++;
+                else
+                    TMessage.sender += b;
             }
         }
+
+        // Displaying LOGs
         Log.i(msgTAG, TMessage.sender);
         Log.i(msgTAG, TMessage.receiver);
         Log.i(msgTAG, TMessage.msg);
+
         return true;
     }
 }
