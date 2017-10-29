@@ -4,12 +4,10 @@
     android:layout_height="match_parent"
     tools:context="com.example.kmlkant3497.bru_chat.ConnectionFragment">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:text="Tab 1"
-        android:textAppearance="?android:attr/textAppearanceLarge"/>
+    <ListView
+        android:id="@+id/listViewConnection"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="10dp"/>
 
 </FrameLayout>

@@ -57,7 +57,8 @@ public class HostTabActivity extends AppCompatActivity {
     public static final int SERVERPORT = 8080;
 
     // get fragment
-    public static TrafficFragment trafficFragment;
+    public static TrafficFragment trafficFragment = new TrafficFragment();
+    public static ConnectionFragment connectionFragment = new ConnectionFragment();
 
     private final ByteBuffer buffer = ByteBuffer.allocate( 16384 );
     Map<Integer, SocketChannel> clients = new HashMap<Integer, SocketChannel>();
@@ -270,6 +271,7 @@ public class HostTabActivity extends AppCompatActivity {
                                         if(!entry.getValue().equals(sc)) {
                                             TMessage.receiver = entry.getKey().toString();
                                             TMessage.msg = "NAME_"+senderNumber+ "_"+ msg;
+                                            Log.d(TAG,"receiver"+TMessage.receiver);
                                             TMessage.sendMessage(buffer, clients);
                                         }
                                     }
@@ -277,11 +279,20 @@ public class HostTabActivity extends AppCompatActivity {
                                     //send msg back to client with its mappingNumber
                                     TMessage.receiver = clientNumbers.get(sc).toString();
                                     TMessage.msg = msg;
+                                    Log.d(TAG,"outside run"+TMessage.msg);
+                                    trafficHandler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            String composite = TMessage.receiver + ": " + TMessage.msg;
+                                            Log.d(TAG,"inside run"+TMessage.msg);
+                                            connectionFragment.setListViewConnection(composite);
 
+                                        }
+                                    });
                                 }
 
-                                //Sending msg
-                                TMessage.sendMessage(buffer, clients);
+                                            //Sending msg
+                                            TMessage.sendMessage(buffer, clients);
 
                                 // update to traffic
                                 trafficHandler.post(new Runnable() {
@@ -399,3 +410,4 @@ class TMessage{
         return true;
     }
 }
+//todo display list of clients
