@@ -28,9 +28,6 @@ public class TrafficFragment extends Fragment {
 
         listViewTraffic = (ListView) view.findViewById(R.id.listViewTraffic);
 
-        listArray.add("Dummy1");
-        listArray.add("Dummy 2");
-
         listAdapter = new ArrayAdapter<String>(getContext(),
                 android.R.layout.simple_list_item_1,
                 listArray);

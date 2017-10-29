@@ -29,20 +29,28 @@
         android:layout_alignTop="@+id/editText_message"
         android:layout_margin="5dp"
         android:text="Send" />
-
-    <TextView
-        android:id="@+id/textView_chat_history"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignEnd="@+id/button_send"
-        android:layout_alignParentTop="true"
-        android:layout_alignRight="@+id/button_send"
         android:layout_marginBottom="50dp"
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
-        android:layout_marginTop="5dp"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        android:textStyle="bold"
-        android:hint="chat History"/>
+        android:layout_marginTop="5dp">
+        <TextView
+            android:id="@+id/textView_chat_history"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignEnd="@+id/button_send"
+            android:layout_alignParentTop="true"
+            android:layout_alignRight="@+id/button_send"
+            android:layout_marginBottom="50dp"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="5dp"
+            android:layout_marginTop="5dp"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
+            android:textStyle="bold"
+            android:hint="chat History"/>
+    </ScrollView>
+
 
 </RelativeLayout>

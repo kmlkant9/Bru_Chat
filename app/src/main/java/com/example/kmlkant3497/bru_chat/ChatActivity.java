@@ -1,6 +1,7 @@
 package com.example.kmlkant3497.bru_chat;
 
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -35,6 +36,8 @@ public class ChatActivity extends AppCompatActivity {
     private String TAG = "chatActivity";
     public String my_message;
     private final ByteBuffer buffer = ByteBuffer.allocate(16384);
+
+    private Handler receiveHandler=new Handler();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -75,6 +78,10 @@ public class ChatActivity extends AppCompatActivity {
 
     }
 
+    public void setReceivedMessage(String value){
+        textView_message.append(value+"\n");
+    }
+
      class sendAsyncTask extends AsyncTask<String,String,String>{
          @Override
          protected void onPreExecute() {
@@ -85,7 +92,7 @@ public class ChatActivity extends AppCompatActivity {
          protected void onPostExecute(String s) {
              super.onPostExecute(s);
              try{
-             textView_message.append(CMessage.msg);}
+             textView_message.append(CMessage.msg+"\n");}
              catch (Exception ex){Log.d(TAG,ex.toString());}
          }
 
@@ -145,9 +152,22 @@ public class ChatActivity extends AppCompatActivity {
                         iterator.next();
                 iterator.remove();
                 if (key.isReadable()) {
-                    boolean ok = CMessage.recvMessage(channel,buffer);
-                    Log.d(TAG,"Received above message");
-                    //TODO textView_message.append(CMessage.msg);
+                    try {
+                        boolean ok = CMessage.recvMessage(channel, buffer);
+                        Log.d(TAG, "Received above message");
+                        //TODO textView_message.append(CMessage.msg);
+                        receiveHandler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    String composite = CMessage.sender + " -> " + CMessage.receiver + ": " + CMessage.msg;
+                                    setReceivedMessage(composite);
+                                } catch (NullPointerException ex) {
+                                    Log.d(TAG, "inside run.."+ex.toString());
+                                }
+                            }
+                        });
+                    }catch (Exception ex){Log.d(TAG,"outside run.."+ex.toString());}
                 }
             }
             return false; // Not done yet
