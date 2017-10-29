@@ -43,8 +43,7 @@ public class ChatActivity extends AppCompatActivity {
     private String TAG = "chatActivity";
     public String my_message;
 
-    public static Socket socket;
-    private final ByteBuffer buffer = ByteBuffer.allocate(16384);
+    //private final ByteBuffer buffer = ByteBuffer.allocate(16384);
 
     public EditText editText_sndr;
     public EditText editText_rcvr;
@@ -72,11 +71,11 @@ public class ChatActivity extends AppCompatActivity {
         ab.setDisplayHomeAsUpEnabled(true);
         //label on action bar
         try {
-            getActionBar().setTitle(Login_Activity.username);
+            getActionBar().setTitle(ClientActivity.username);
         }
         catch(Exception ex){Log.d(TAG,"actionbar fail "+ex.toString());}
         try {
-            getSupportActionBar().setTitle(Login_Activity.username);
+            getSupportActionBar().setTitle(ClientActivity.username);
         }
         catch(Exception ex){Log.d(TAG,"Support fail "+ex.toString());}
 
@@ -126,18 +125,22 @@ public class ChatActivity extends AppCompatActivity {
              Log.i(TAG, "************doInBackground()");
              String sendMessage;
              // sending to client (pwrite object)
-             OutputStream ostream = null;
-             try {
-                 ostream = socket.getOutputStream();
-             } catch (IOException e) {
-                 e.printStackTrace();
-             }
+             // Socket socket = SocketHandler.getSocket();
+//             OutputStream ostream = null;
+//             try {
+//                 ostream = socket.getOutputStream();
+//             } catch (IOException e) {
+//                 e.printStackTrace();
+//             }
 
-             PrintWriter pwrite = new PrintWriter(ostream, true);
-             sendMessage = CMessage.msg;
-             sendMessage = CMessage.sender + "_" + CMessage.receiver + "_" + sendMessage;
-             pwrite.print(sendMessage);       // sending to server
-             pwrite.flush();                    // flush the data
+//             PrintWriter pwrite = new PrintWriter(ostream, true);
+             PrintWriter printWriter = SocketHandler.getPrintWriter();
+             //sendMessage = CMessage.msg;
+             //sendMessage = CMessage.sender + "_" + CMessage.receiver + "_" + sendMessage;
+
+             sendMessage = CMessage.getMsg();
+             printWriter.print(sendMessage);       // sending to server
+             printWriter.flush();                    // flush the data
 
              Log.d(TAG, "*/*/*/*/*/* message has been sent");
 
@@ -154,7 +157,7 @@ public class ChatActivity extends AppCompatActivity {
         @Override
         public void run() {
             Log.d(TAG, "in receiveMessages Thread");
-            try {
+            /*try {
                 socket = new Socket(Login_Activity.ip_address, 8080);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -169,12 +172,13 @@ public class ChatActivity extends AppCompatActivity {
             }
             Log.d(TAG, "after try catch");
             BufferedReader receiveRead = new BufferedReader(new InputStreamReader(istream));
-
+            */
+            BufferedReader bufferedReader = SocketHandler.getBufferedReader();
             Log.d(TAG, "before while(true)");
             while (true) {
                 try {
                     Log.d(TAG, "while > try");
-                    if ((receiveMessage = receiveRead.readLine()) != null) //receive from server
+                    if ((receiveMessage = bufferedReader.readLine()) != null) //receive from server
                     {
                         Log.d(TAG, "while > try > if");
                         //System.out.println(receiveMessage); // displaying at DOS prompt
@@ -191,7 +195,7 @@ public class ChatActivity extends AppCompatActivity {
                             }
                         });
 
-                        Log.d(TAG, "Recieved msg is: " + receiveMessage);
+                        Log.d(TAG, "Received msg is: " + receiveMessage);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

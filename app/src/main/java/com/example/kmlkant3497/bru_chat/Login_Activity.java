@@ -24,14 +24,14 @@ public class Login_Activity extends AppCompatActivity {
     // helps in Debugging (via LOG messages)
     private static final String TAG = "Login_Activity.java";
 
-    public static String username, ip_address;
+    private String username, ip_address;
     private boolean connected = false;
     public Button button_join;
     public EditText editText_ip;
     public EditText editText_usrname;
 
 
-    public static Socket socket;
+    private Socket socket;
     private final ByteBuffer buffer = ByteBuffer.allocate( 16384 );
 
     @Override
@@ -79,8 +79,10 @@ public class Login_Activity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Welcome !..", Toast.LENGTH_SHORT).show();
 
 
-                Intent myIntent = new Intent(Login_Activity.this, ChatActivity.class);
+                Intent myIntent = new Intent(Login_Activity.this, ClientActivity.class);
+                myIntent.putExtra("NAME", username);
                 startActivity(myIntent);
+
             }
             else {
                 Log.d(TAG, "IP-" + ip_address + " is InCorrect");
@@ -110,11 +112,12 @@ public class Login_Activity extends AppCompatActivity {
                     if (address instanceof Inet6Address || address instanceof Inet4Address) {
                         // It's ipv4
 
-                        Log.d("LoginActivity", "C: Connecting...");
-                        //Socket socket = new Socket(serverAddr, ServerActivity.SERVERPORT);
-                        //socket = new Socket(address, 8080);
-                        //socket.close();
-                        //Log.d("LoginActivity", socket.toString());
+                        Log.d(TAG, "C: Connecting...");
+
+                        socket = new Socket(address, 8080);
+                        SocketHandler.setSocket(socket);
+
+                        Log.d("LoginActivity", socket.toString());
                         Log.d(TAG, "IP has been validated");
                         return true;
                     }
@@ -127,9 +130,6 @@ public class Login_Activity extends AppCompatActivity {
                     e.printStackTrace();
                 } catch (Exception e){
                     Log.e("ClientActivity", "C: Error", e);
-                }finally {
-                    //try{socket.close();
-                    //}catch (IOException e){}
                 }
             }
             return false;

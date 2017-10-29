@@ -1,6 +1,7 @@
 package com.example.kmlkant3497.bru_chat;
 
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -11,7 +12,12 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -34,13 +40,13 @@ public class ClientActivity extends AppCompatActivity {
 
     public ListView listView_peers;
     public Button button_leave;
-    private Socket l_socket = Login_Activity.socket;
 
-    public static SocketChannel channel;
-    public static Selector selector;
     String TAG = "clientActivity";
-    String usrname = Login_Activity.username;
-    private final ByteBuffer buffer = ByteBuffer.allocate(16384);
+
+    public static String username;
+    public static String myMappingNumber;
+
+    //private final ByteBuffer buffer = ByteBuffer.allocate(16384);
     Map<Integer, String> clientNames = new HashMap<>();
 
     @Override
@@ -48,11 +54,16 @@ public class ClientActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_client);
 
-        //starting networkThread
-        Log.i(TAG, "Client: starting network thread");
-        Thread thd = new Thread(new clientThread());
-        thd.start();
-        Log.i(TAG, "Client: started network thread");
+        Bundle bundle = getIntent().getExtras();
+        username = bundle.getString(username);
+
+        //starting sendNameAsyncTask
+        Log.i(TAG, "Client: starting sendNameAsyncTask");
+        new sendNameAsyncTask().execute();
+
+
+//        Thread thd = new Thread(new clientThread());
+//        thd.start();
 
 
         //Send Username to Host on Creation
@@ -90,14 +101,14 @@ public class ClientActivity extends AppCompatActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position,
                                     long id) {
                 Intent intent = new Intent(ClientActivity.this, ChatActivity.class);
-                String message = "abc";
-                intent.putExtra(EXTRA_MESSAGE, message);
+                //String message = "abc";
+                //intent.putExtra(EXTRA_MESSAGE, message);
                 startActivity(intent);
             }
         });
     }
 
-    class clientThread implements Runnable {
+    /*class clientThread implements Runnable {
         private final String clientTag = "clientTHREAD";
         boolean finished = false;
         @Override
@@ -207,14 +218,91 @@ public class ClientActivity extends AppCompatActivity {
         String msg = charBuffer.toString();
         return msg;
     }
-}
+} */
+
+    class sendNameAsyncTask extends AsyncTask<String, String, String> {
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            Socket socket = SocketHandler.getSocket();
+            if(socket.isClosed()) {
+                Log.i(TAG, "Socket closed");
+            }
+
+            //get and set Input Stream
+            InputStream inputStream = null;
+            try {
+                inputStream = socket.getInputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            SocketHandler.setBufferedReader(bufferedReader);
+
+            //get and set Output Stream
+            OutputStream outputStream = null;
+            try {
+                outputStream = socket.getOutputStream();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            PrintWriter printWriter = new PrintWriter(outputStream, true);
+            SocketHandler.setPrintWriter(printWriter);
+
+            //Send your name to Server
+            printWriter.print(CMessage.getMsg("0", "0", username));
+            printWriter.flush();
+
+            //Server sends back your mappingNo
+            try {
+                if((CMessage.msg = bufferedReader.readLine()) != null) {
+                    if(CMessage.isMessageFromServer()) {
+                        myMappingNumber = CMessage.getMyMappingNumber();
+                        Log.i(TAG, "My mapping no: " + myMappingNumber);
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+            //ask Server for List
+            printWriter.print(CMessage.getMsg(myMappingNumber, "0", "LIST"));
+            printWriter.flush();
+
+            //Server sends List
+            try {
+                if((CMessage.msg = bufferedReader.readLine()) != null) {
+                    if(CMessage.isMessageFromServer()) {
+                        CMessage.updateList(clientNames);
+                        Log.i(TAG, "Updating List ");
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+        }
+    }
 }
 
 
-class CMessage {
-    static String sender;
-    static String receiver;
-    static String msg;
+/*class CMessage {
+    public static String sender;
+    public static String receiver;
+    public static String msg;
     private final static String msgTAG="CMessage";
 
     private static void clear() {
@@ -223,6 +311,17 @@ class CMessage {
         msg="";
     }
 
+    public static String getMsg(String sender, String receiver, String msg) {
+        String message = (sender+"_"+receiver+"_"+msg);
+        Log.i("Cmessage", message);
+        return message;
+    }
+
+    public static String getMsg() {
+        String message = (sender+"_"+receiver+"_"+msg);
+        Log.i("Cmessage", message);
+        return message;
+    }
     public static boolean sendMessage(SocketChannel sc, ByteBuffer buffer) throws IOException {
         Log.i(msgTAG, "From: " + CMessage.sender + " to: " + CMessage.receiver);
         String tempMessage = (CMessage.sender + "_" + CMessage.receiver + "_" + CMessage.msg );
@@ -281,4 +380,4 @@ class CMessage {
 
         return true;
     }
-}
+}*/

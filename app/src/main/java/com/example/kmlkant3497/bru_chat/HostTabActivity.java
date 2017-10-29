@@ -78,7 +78,7 @@ public class HostTabActivity extends AppCompatActivity {
 
         trafficHandler = new Handler();
 
-
+        clientNames.put(0, "Server");
         serverStatus = (TextView) findViewById(R.id.textView_ip);
 
         SERVERIP = "Can't Connect";
@@ -260,36 +260,52 @@ public class HostTabActivity extends AppCompatActivity {
                                 boolean ok = TMessage.recvMessage(sc, buffer);
 
                                 //check if message is for server
-                                if(ok && TMessage.receiver.equals("0")) {
-                                    clientNames.put(clientNumbers.get( sc ), TMessage.msg);
-                                    TMessage.sender = "0";
+                                if(ok && TMessage.isMessageForServer()) {
+                                    if(TMessage.isNewClient()) {
+                                        Log.i(TAG, "got new client");
+                                        clientNames.put(clientNumbers.get(sc), TMessage.msg);
+                                        TMessage.sender = "0";
 
-                                    int senderNumber = clientNumbers.get( sc );
-                                    String msg = TMessage.msg;
+                                        int senderNumber = clientNumbers.get(sc);
+                                        String msg = TMessage.msg;
 
-                                    for (Map.Entry<Integer, SocketChannel> entry : clients.entrySet())
-                                    {   //format 0_i_NAME_sc_username
-                                        if(!entry.getValue().equals(sc)) {
-                                            TMessage.receiver = entry.getKey().toString();
-                                            TMessage.msg = "NAME_"+senderNumber+ "_"+ msg;
-                                            Log.d(TAG,"receiver"+TMessage.receiver);
-                                            TMessage.sendMessage(buffer, clients);
+                                        for (Map.Entry<Integer, SocketChannel> entry : clients.entrySet()) {   //format 0_i_NAME_sc_username
+                                            if (!entry.getValue().equals(sc)) {
+                                                TMessage.receiver = entry.getKey().toString();
+                                                TMessage.msg = "NAME_" + senderNumber + "_" + msg;
+                                                Log.d(TAG, "receiver" + TMessage.receiver);
+                                                TMessage.sendMessage(buffer, clients);
+                                            }
                                         }
+
+                                        //send msg back to client with its mappingNumber
+                                        TMessage.receiver = clientNumbers.get(sc).toString();
+                                        TMessage.msg = msg;
+                                        Log.d(TAG, "outside run" + TMessage.msg);
+                                        trafficHandler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                String composite = TMessage.receiver + ": " + TMessage.msg;
+                                                Log.d(TAG, "inside run" + TMessage.msg);
+                                                connectionFragment.setListViewConnection(composite);
+
+                                            }
+                                        });
+                                    } else { //client is asking for list
+                                        Log.i(TAG, "client wants list");
+                                        //prepare list
+                                        TMessage.msg = "LIST";
+                                        try {
+                                            for (Map.Entry<Integer, String> entry : clientNames.entrySet()) {   //format 0_i_NAME_sc_username
+                                                TMessage.msg += "_"+entry.getKey().toString() + "_" + entry.getValue();
+                                            }
+                                        } catch (Exception e) {
+                                            Log.i(TAG, "error in preparing list"+e);
+                                        }
+
+                                        TMessage.receiver=TMessage.sender;
+                                        TMessage.sender="0";
                                     }
-
-                                    //send msg back to client with its mappingNumber
-                                    TMessage.receiver = clientNumbers.get(sc).toString();
-                                    TMessage.msg = msg;
-                                    Log.d(TAG,"outside run"+TMessage.msg);
-                                    trafficHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            String composite = TMessage.receiver + ": " + TMessage.msg;
-                                            Log.d(TAG,"inside run"+TMessage.msg);
-                                            connectionFragment.setListViewConnection(composite);
-
-                                        }
-                                    });
                                 }
 
                                 //Sending 'msg' to corresponding client
@@ -365,6 +381,28 @@ class TMessage{
         sender="";
         receiver="";
         msg="";
+    }
+
+    static boolean isNewClient() {
+        //msg format 0_0_name
+        try {
+            String msgs[] = msg.split("_", 2);
+            Log.i(msgTAG, "isNewClient: " + msgs[0]);
+            if (msgs[0].equals("LIST")) {
+                return false;
+            }
+            return true;
+        }catch (Exception e) {
+            Log.i(msgTAG, "isNewClient: "+e);
+        }
+        return false;
+    }
+
+    static boolean isMessageForServer() {
+        if(receiver.equals("0")) {
+            return true;
+        }
+        return false;
     }
 
     public static boolean sendMessage(ByteBuffer buffer, Map<Integer, SocketChannel> clients) throws IOException {
