@@ -42,11 +42,7 @@ public class ChatActivity extends AppCompatActivity {
     public TextView textView_message;
     private String TAG = "chatActivity";
     public String my_message;
-
-    //private final ByteBuffer buffer = ByteBuffer.allocate(16384);
-
-    public EditText editText_sndr;
-    public EditText editText_rcvr;
+    private Bundle bundle ;
 
     private Handler receiveHandler;
     @Override
@@ -66,30 +62,27 @@ public class ChatActivity extends AppCompatActivity {
         Log.i(TAG, "Client: started network thread");
 
         receiveHandler = new Handler();
-
+        bundle = getIntent().getExtras();
         ActionBar ab = getSupportActionBar();
         ab.setDisplayHomeAsUpEnabled(true);
         //label on action bar
         try {
-            getActionBar().setTitle(ClientActivity.username);
+            getActionBar().setTitle(bundle.getString("clientName"));
         }
         catch(Exception ex){Log.d(TAG,"actionbar fail "+ex.toString());}
         try {
-            getSupportActionBar().setTitle(ClientActivity.username);
+            getSupportActionBar().setTitle(bundle.getString("clientName"));
         }
         catch(Exception ex){Log.d(TAG,"Support fail "+ex.toString());}
-
-        editText_sndr = (EditText) findViewById(R.id.sender_editText);
-        editText_rcvr = (EditText) findViewById(R.id.receiver_editText);
-
         Log.d(TAG, "one");
 
         //button ClickListener
         button_send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                CMessage.sender = editText_sndr.getText().toString();
-                CMessage.receiver = editText_rcvr.getText().toString();
+
+                CMessage.sender = bundle.getString("sender");
+                CMessage.receiver = bundle.getString("receiver");
                 CMessage.msg = editText_message.getText().toString();
                 editText_message.setText("");
                 new sendAsyncTask().execute();
@@ -124,19 +117,7 @@ public class ChatActivity extends AppCompatActivity {
 
              Log.i(TAG, "************doInBackground()");
              String sendMessage;
-             // sending to client (pwrite object)
-             // Socket socket = SocketHandler.getSocket();
-//             OutputStream ostream = null;
-//             try {
-//                 ostream = socket.getOutputStream();
-//             } catch (IOException e) {
-//                 e.printStackTrace();
-//             }
-
-//             PrintWriter pwrite = new PrintWriter(ostream, true);
              PrintWriter printWriter = SocketHandler.getPrintWriter();
-             //sendMessage = CMessage.msg;
-             //sendMessage = CMessage.sender + "_" + CMessage.receiver + "_" + sendMessage;
 
              sendMessage = CMessage.getMsg();
              printWriter.print(sendMessage);       // sending to server
@@ -157,22 +138,6 @@ public class ChatActivity extends AppCompatActivity {
         @Override
         public void run() {
             Log.d(TAG, "in receiveMessages Thread");
-            /*try {
-                socket = new Socket(Login_Activity.ip_address, 8080);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            Log.d(TAG, "socket made");
-
-            InputStream istream = null;
-            try {
-                istream = socket.getInputStream();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            Log.d(TAG, "after try catch");
-            BufferedReader receiveRead = new BufferedReader(new InputStreamReader(istream));
-            */
             BufferedReader bufferedReader = SocketHandler.getBufferedReader();
             Log.d(TAG, "before while(true)");
             while (true) {
