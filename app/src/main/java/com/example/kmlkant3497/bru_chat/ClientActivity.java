@@ -46,6 +46,8 @@ public class ClientActivity extends AppCompatActivity {
     public static ArrayAdapter<String> clientAdapter;
     public Button button_leave;
 
+    SwipeRefreshLayout mSwipeRefreshLayout;
+
     String TAG = "clientActivity";
 
     public static String username;
@@ -84,6 +86,16 @@ public class ClientActivity extends AppCompatActivity {
             }
         });
 
+        // * * * Swipe Down To Refresh * * * //
+        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeToRefresh);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                new refreshPeerList().execute();
+                mSwipeRefreshLayout.setRefreshing(false);
+            }
+        });
+
         //todo client
         listView_peers.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -99,6 +111,43 @@ public class ClientActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+    }
+
+    class refreshPeerList extends AsyncTask<String, String, String>{
+
+        @Override
+        protected String doInBackground(String... strings) {
+            BufferedReader bufferedReader = SocketHandler.getBufferedReader();
+            PrintWriter printWriter = SocketHandler.getPrintWriter();
+
+            //ask Server for List
+            printWriter.print(CMessage.getMsg(myMappingNumber, "0", "LIST"));
+            printWriter.flush();
+
+            //Server sends List
+            try {
+                if((CMessage.msg = bufferedReader.readLine()) != null) {
+                    if(CMessage.isMessageFromServer()) {
+                        CMessage.updateList(clientNames);
+                        Log.i(TAG, "Updating List ");
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            clientArray.clear();
+            for(Map.Entry<String , Integer> entry: clientNames.entrySet()){
+                clientArray.add(entry.getKey());
+                clientAdapter.notifyDataSetChanged();
+            }
+        }
     }
 
     class sendNameAsyncTask extends AsyncTask<String, String, String> {
