@@ -50,7 +50,7 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
-        // Enable the UpNavigation button
+
 
         //initializing xmls
         editText_message = (EditText) findViewById(R.id.editText_message);
@@ -63,6 +63,8 @@ public class ChatActivity extends AppCompatActivity {
 
         receiveHandler = new Handler();
         bundle = getIntent().getExtras();
+
+        // Enable the UpNavigation button
         ActionBar ab = getSupportActionBar();
         ab.setDisplayHomeAsUpEnabled(true);
         //label on action bar
@@ -135,6 +137,16 @@ public class ChatActivity extends AppCompatActivity {
         private String receiveMessage;
 
         private String TAG = "recvMessage Thread";
+
+        public String formatMessage(String message){
+            int i=0,count=0;
+            while(count<2){
+                if(message.charAt(i)=='_') count++;
+                i++;
+            }
+            return message.substring(i);
+        }
+
         @Override
         public void run() {
             Log.d(TAG, "in receiveMessages Thread");
@@ -148,11 +160,19 @@ public class ChatActivity extends AppCompatActivity {
                         Log.d(TAG, "while > try > if");
                         //System.out.println(receiveMessage); // displaying at DOS prompt
 
-                        //TODO textView_message.append(CMessage.msg);
                         receiveHandler.post(new Runnable() {
                             @Override
                             public void run() {
                                 try {
+                                    CMessage.msg = receiveMessage;
+                                    if(CMessage.isMessageFromServer()){
+                                        String newClient = CMessage.getClientName();
+                                        receiveMessage = "   "+ newClient +" joined your server!!";
+                                    }
+                                    else{
+                                        //todo call function to format received message!!
+                                        receiveMessage = bundle.getString("clientName") +"-> "+ formatMessage(receiveMessage);
+                                    }
                                     setReceivedMessage(receiveMessage);
                                 } catch (NullPointerException ex) {
                                     Log.d(TAG, "inside run.."+ex.toString());
