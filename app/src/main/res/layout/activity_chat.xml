@@ -7,20 +7,6 @@
     tools:context="com.example.kmlkant3497.bru_chat.ChatActivity">
 
     <EditText
-        android:id="@+id/sender_editText"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:hint="Sender"/>
-
-    <EditText
-        android:id="@+id/receiver_editText"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:layout_alignEnd="@+id/scrollView2"
-        android:layout_alignParentTop="true"
-        android:layout_alignRight="@+id/scrollView2"
-        android:hint="Receiver" />
-    <EditText
         android:id="@+id/editText_message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -43,13 +29,14 @@
         android:layout_alignTop="@+id/editText_message"
         android:layout_margin="5dp"
         android:text="Send" />
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginBottom="50dp"
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
-        android:layout_marginTop="55dp"
+        android:layout_marginTop="5dp"
         android:id="@+id/scrollView2">
         <TextView
             android:id="@+id/textView_chat_history"
@@ -62,11 +49,8 @@
             android:layout_marginLeft="5dp"
             android:layout_marginRight="5dp"
             android:layout_marginTop="5dp"
+            android:hint="chat History"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"
-            android:textStyle="bold"
-            android:hint="chat History"/>
-
+            android:textStyle="bold" />
     </ScrollView>
-
-
 </RelativeLayout>
