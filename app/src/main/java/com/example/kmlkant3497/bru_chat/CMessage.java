@@ -54,7 +54,7 @@ class CMessage {
         return msgs[4];
     }
 
-    static void updateList(Map<Integer, String> clientNames) {
+    static void updateList(Map< String,Integer> clientNames) {
          //msg format 0_mp_LIST_NO_NAME
          String msgs[] = msg.split("_");
          if(!msgs[2].equals("LIST")) {
@@ -64,7 +64,7 @@ class CMessage {
          Log.i("Cmessage", "List from Server");
          for(int i=3; i<msgs.length; i+=2) {
              Log.i("Cmessage", "List: "+msgs[i]+" "+msgs[i+1]);
-             clientNames.put(Integer.parseInt(msgs[i]), msgs[i+1]);
+             clientNames.put( msgs[i+1],Integer.parseInt(msgs[i]));
          }
          return;
     }
