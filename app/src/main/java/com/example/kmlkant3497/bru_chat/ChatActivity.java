@@ -110,7 +110,8 @@ public class ChatActivity extends AppCompatActivity {
              Log.d(TAG, "************onPostExecute()");
              super.onPostExecute(s);
              try{
-             textView_message.append(s+"\n");
+                 s = "you -> " + formatMessage(s);
+                 textView_message.append(s+"\n");
              } catch (Exception ex){Log.d(TAG,ex.toString());}
          }
 
@@ -133,19 +134,19 @@ public class ChatActivity extends AppCompatActivity {
          }
      }
 
+    public String formatMessage(String message){
+        int i=0,count=0;
+        while(count<2){
+            if(message.charAt(i)=='_') count++;
+            i++;
+        }
+        return message.substring(i);
+    }
+
     class receiveMessages implements Runnable{
         private String receiveMessage;
 
         private String TAG = "recvMessage Thread";
-
-        public String formatMessage(String message){
-            int i=0,count=0;
-            while(count<2){
-                if(message.charAt(i)=='_') count++;
-                i++;
-            }
-            return message.substring(i);
-        }
 
         @Override
         public void run() {

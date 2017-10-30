@@ -50,7 +50,6 @@
             android:layout_marginRight="5dp"
             android:layout_marginTop="5dp"
             android:hint="chat History"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large"
-            android:textStyle="bold" />
+            android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
     </ScrollView>
 </RelativeLayout>

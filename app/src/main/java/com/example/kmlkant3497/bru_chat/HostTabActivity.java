@@ -269,14 +269,14 @@ public class HostTabActivity extends AppCompatActivity {
                                         int senderNumber = clientNumbers.get(sc);
                                         String msg = TMessage.msg;
 
-                                        for (Map.Entry<Integer, SocketChannel> entry : clients.entrySet()) {   //format 0_i_NAME_sc_username
+                                        /*for (Map.Entry<Integer, SocketChannel> entry : clients.entrySet()) {   //format 0_i_NAME_sc_username
                                             if (!entry.getValue().equals(sc)) {
                                                 TMessage.receiver = entry.getKey().toString();
                                                 TMessage.msg = "NAME_" + senderNumber + "_" + msg;
                                                 Log.d(TAG, "receiver" + TMessage.receiver);
                                                 TMessage.sendMessage(buffer, clients);
                                             }
-                                        }
+                                        }*/
 
                                         //send msg back to client with its mappingNumber
                                         TMessage.receiver = clientNumbers.get(sc).toString();
